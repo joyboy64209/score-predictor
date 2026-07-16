@@ -12,3 +12,7 @@ venv/
 .coverage
 .migrations/dev.db
 prisma/migrations/dev/
+.http_cache.sqlite
+ml/.http_cache.sqlite
+ml/models/
+ml/datasets/kaggle/**/*.zip

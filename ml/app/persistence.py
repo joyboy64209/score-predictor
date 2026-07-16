@@ -31,15 +31,18 @@ def persist_predictions(fixture_id: str, predictions: list[Prediction], model_ve
 
 
 def load_thresholds() -> dict:
-    from sqlalchemy import create_engine, text
-    engine = create_engine(settings.database_url)
-    with engine.connect() as conn:
-        row = conn.execute(text('SELECT thresholds FROM "Config" WHERE id = \'singleton\'')).first()
-    if not row:
+    try:
+        from sqlalchemy import create_engine, text
+        engine = create_engine(settings.database_url)
+        with engine.connect() as conn:
+            row = conn.execute(text("SELECT thresholds FROM \"Config\" WHERE id = 'singleton'")).first()
+        if not row:
+            raise ValueError("no thresholds row")
+        return dict(row[0])
+    except Exception:
         return {
             "MATCH_RESULT": settings.threshold_match_result,
             "DOUBLE_CHANCE": settings.threshold_double_chance,
             "OTHER": settings.threshold_other,
             "COMBINATION": settings.threshold_combination,
         }
-    return dict(row[0])

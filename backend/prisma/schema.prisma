@@ -142,3 +142,149 @@ model Config {
   thresholds Json
   updatedAt DateTime @updatedAt
 }
+
+model Player {
+  id         String @id @default(cuid())
+  name       String
+  teamId     String?
+  externalId String?
+  position   String?
+  createdAt  DateTime @default(now())
+}
+
+model Venue {
+  id         String @id @default(cuid())
+  name       String
+  city       String?
+  externalId String?
+}
+
+model MatchStatistic {
+  id                  String   @id @default(cuid())
+  fixtureId           String
+  homeShots           Int?
+  awayShots           Int?
+  homeShotsOnTarget   Int?
+  awayShotsOnTarget   Int?
+  homePossession      Float?
+  awayPossession      Float?
+  homePassAccuracy    Float?
+  awayPassAccuracy    Float?
+  homeCorners         Int?
+  awayCorners         Int?
+  homeYellow          Int?
+  awayYellow          Int?
+  homeRed             Int?
+  awayRed             Int?
+  homeXg              Float?
+  awayXg              Float?
+  homeXga             Float?
+  awayXga             Float?
+}
+
+model PlayerStatistic {
+  id        String  @id @default(cuid())
+  fixtureId String
+  playerName String
+  teamName  String
+  minutes   Int?
+  goals     Int     @default(0)
+  assists   Int     @default(0)
+  rating    Float?
+}
+
+model Standing {
+  id         String @id @default(cuid())
+  competition String
+  season     String
+  teamName   String
+  position   Int
+  played     Int    @default(0)
+  wins       Int    @default(0)
+  draws      Int    @default(0)
+  losses     Int    @default(0)
+  goalsFor   Int    @default(0)
+  goalsAgainst Int  @default(0)
+  points     Int    @default(0)
+}
+
+model AdvancedMetric {
+  id    String  @id @default(cuid())
+  teamName String
+  season  String
+  xg     Float?
+  xga    Float?
+  xpts   Float?
+  npxg   Float?
+  npxga  Float?
+  ppda   Float?
+  deep   Float?
+  sca    Float?
+}
+
+model Injury {
+  id        String @id @default(cuid())
+  teamName  String
+  playerName String
+  reason    String?
+  type      String?
+  until     String?
+}
+
+model Suspension {
+  id        String @id @default(cuid())
+  teamName  String
+  playerName String
+  reason    String?
+  until     String?
+}
+
+model Lineup {
+  id        String @id @default(cuid())
+  fixtureId String
+  teamName  String
+  formation String?
+  starting  Json?
+  substitutes Json?
+}
+
+model EventData {
+  id         String  @id @default(cuid())
+  fixtureId  String
+  eventType  String
+  teamName   String
+  playerName String?
+  minute     Int?
+  x          Float?
+  y          Float?
+  endX       Float?
+  endY       Float?
+  extra      Json?
+}
+
+model EloRating {
+  id       String @id @default(cuid())
+  teamName String
+  rating   Float
+  rank     Int?
+  date     String?
+  country  String?
+}
+
+model Odds {
+  id        String  @id @default(cuid())
+  fixtureId String
+  bookmaker String?
+  home      Float?
+  draw      Float?
+  away      Float?
+}
+
+model FeatureRow {
+  id             String   @id @default(cuid())
+  fixtureId      String
+  features       Json
+  label          Int
+  datasetVersion String
+  createdAt      DateTime @default(now())
+}
