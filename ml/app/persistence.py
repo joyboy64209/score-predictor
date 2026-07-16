@@ -7,8 +7,9 @@ from .engine import Prediction
 
 
 def persist_predictions(fixture_id: str, predictions: list[Prediction], model_version: str):
-    from sqlalchemy import create_engine, text, insert
-    engine = create_engine(settings.database_url)
+    from sqlalchemy import text, insert
+    from . import db
+    engine = db.make_engine(settings.database_url)
     rows = []
     for p in predictions:
         rows.append({
@@ -26,14 +27,15 @@ def persist_predictions(fixture_id: str, predictions: list[Prediction], model_ve
     with engine.begin() as conn:
         conn.execute(text('DELETE FROM "Prediction" WHERE "fixtureId" = :fid'), {"fid": fixture_id})
         if rows:
-            conn.execute(insert(text('"Prediction"')), rows)
+            conn.execute(insert(db.prediction_tbl), rows)
     return len(rows)
 
 
 def load_thresholds() -> dict:
     try:
         from sqlalchemy import create_engine, text
-        engine = create_engine(settings.database_url)
+        from . import db
+        engine = db.make_engine(settings.database_url)
         with engine.connect() as conn:
             row = conn.execute(text("SELECT thresholds FROM \"Config\" WHERE id = 'singleton'")).first()
         if not row:

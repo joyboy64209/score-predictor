@@ -5,6 +5,7 @@ new normalized entities (players, venues, stats, events, standings, elo)."""
 
 from contextlib import contextmanager
 from typing import Iterable, Optional
+import logging
 
 from sqlalchemy import (
     create_engine, Engine, text, MetaData, Table, Column, String, Integer,
@@ -14,9 +15,17 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .config import settings
 
+logger = logging.getLogger("db")
+
 
 def make_engine(url: Optional[str] = None) -> Engine:
-    return create_engine(url or settings.database_url, future=True, pool_pre_ping=True)
+    raw = url or settings.database_url
+    # Strip Prisma-style "?schema=public" which SQLAlchemy/psycopg2 reject
+    if "?" in raw:
+        base, _, query = raw.partition("?")
+        params = [p for p in query.split("&") if not p.lower().startswith("schema=")]
+        raw = base + ("?" + "&".join(params) if params else "")
+    return create_engine(raw, future=True, pool_pre_ping=True)
 
 
 engine = make_engine()
@@ -141,14 +150,19 @@ def upsert(conn, table: Table, rows: Iterable[dict], conflict_cols: list[str]):
 def init_db():
     """Idempotently create all tables. Mirrors Prisma models + new entities.
     Safe to call at startup; only creates what is missing."""
+    import json
     metadata.create_all(engine)
     with connection() as conn:
         # ensure the Config singleton row exists for thresholds
-        conn.execute(text(
-            "INSERT INTO \"Config\" (id, thresholds) VALUES ('singleton', "
-            "'{\"MATCH_RESULT\":70,\"DOUBLE_CHANCE\":90,\"OTHER\":80,\"COMBINATION\":80}') "
-            "ON CONFLICT (id) DO NOTHING"
-        ))
+        try:
+            conn.execute(text(
+                'INSERT INTO "Config" (id, thresholds) VALUES (:id, :thr) '
+                'ON CONFLICT (id) DO NOTHING'
+            ), {"id": "singleton",
+                 "thr": json.dumps({"MATCH_RESULT": 70, "DOUBLE_CHANCE": 90,
+                                    "OTHER": 80, "COMBINATION": 80})})
+        except Exception as exc:
+            logger.warning("Could not seed Config row (table may be missing): %s", exc)
 
 
 def fetch_one(query: str, params: Optional[dict] = None):

@@ -61,9 +61,9 @@ async def lifespan(app: FastAPI):
         db.init_db()
     except Exception as exc:
         logger.warning("DB init skipped (database unavailable): %s", exc)
-    scheduler.start()
+    scheduler.scheduler.start()
     yield
-    scheduler.stop()
+    scheduler.scheduler.stop()
 
 
 app = FastAPI(title="Match Predictor ML Service", version="2.0.0", lifespan=lifespan)
