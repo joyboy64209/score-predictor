@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum MarketType {
+  MATCH_RESULT
+  DOUBLE_CHANCE
+  BTTS
+  OVER_UNDER
+  TEAM_GOALS
+  FIRST_TEAM_TO_SCORE
+  CLEAN_SHEET
+  DRAW_NO_BET
+  WIN_TO_NIL
+  EXACT_SCORE
+  GOAL_RANGE
+  HALF_WINNER
+  COMBINATION
+}
+
+enum PredictionStatus {
+  QUALIFIED
+  REJECTED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         UserRole @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model League {
+  id        String   @id @default(cuid())
+  name      String
+  country   String?
+  externalId String?
+  createdAt DateTime @default(now())
+  seasons   Season[]
+}
+
+model Season {
+  id        String   @id @default(cuid())
+  leagueId  String
+  league    League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  name      String
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime @default(now())
+  fixtures  Fixture[]
+  @@unique([leagueId, name])
+}
+
+model Team {
+  id         String    @id @default(cuid())
+  name       String
+  shortName  String?
+  externalId String?
+  createdAt  DateTime  @default(now())
+  homeFixtures Fixture[] @relation("homeTeam")
+  awayFixtures Fixture[] @relation("awayTeam")
+  homeStats    TeamSeasonStat[] @relation("homeStats")
+  awayStats    TeamSeasonStat[] @relation("awayStats")
+}
+
+model Fixture {
+  id         String   @id @default(cuid())
+  leagueId   String
+  league     League   @relation(fields: [leagueId], references: [id])
+  seasonId   String
+  season     Season   @relation(fields: [seasonId], references: [id])
+  homeTeamId String
+  homeTeam   Team     @relation("homeTeam", fields: [homeTeamId], references: [id])
+  awayTeamId String
+  awayTeam   Team     @relation("awayTeam", fields: [awayTeamId], references: [id])
+  matchday   Int?
+  kickoff    DateTime
+  status     String   @default("SCHEDULED")
+  homeScore  Int?
+  awayScore  Int?
+  externalId String?
+  createdAt  DateTime @default(now())
+  predictions Prediction[]
+  @@index([seasonId, matchday])
+}
+
+model TeamSeasonStat {
+  id           String @id @default(cuid())
+  teamId       String
+  team         Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  seasonId     String
+  season       Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  played       Int    @default(0)
+  wins         Int    @default(0)
+  draws        Int    @default(0)
+  losses       Int    @default(0)
+  goalsFor     Int    @default(0)
+  goalsAgainst Int    @default(0)
+  @@unique([teamId, seasonId])
+}
+
+model Prediction {
+  id            String           @id @default(cuid())
+  fixtureId     String
+  fixture       Fixture          @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  market        MarketType
+  selection     String
+  probability   Float
+  confidence    Float
+  expectedValue Float?
+  status        PredictionStatus @default(QUALIFIED)
+  reasons       Json?
+  modelVersion  String?
+  createdAt     DateTime         @default(now())
+  @@index([fixtureId, status])
+}
+
+model ModelVersion {
+  id            String   @id @default(cuid())
+  name          String
+  algorithm     String
+  metrics       Json?
+  trainedAt     DateTime @default(now())
+  isActive      Boolean  @default(false)
+}
+
+model Config {
+  id    String @id @default("singleton")
+  thresholds Json
+  updatedAt DateTime @updatedAt
+}
