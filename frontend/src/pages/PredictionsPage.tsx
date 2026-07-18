@@ -62,12 +62,14 @@ export default function PredictionsPage() {
   const withPicks = (fixtures.data ?? []).filter((f) => f.predictions.length > 0);
 
   // Error state
-  if (leagues.error) {
+  if (leagues.error || matchdays.error || fixtures.error) {
+    const errorMessage = leagues.error?.message || matchdays.error?.message || fixtures.error?.message || 'An unknown error occurred';
     return (
       <div className="rounded-xl border-2 border-dashed border-red-300 bg-red-50 p-12 text-center">
         <AlertCircle className="mx-auto mb-4 h-12 w-12 text-red-400" />
-        <h3 className="mb-2 text-lg font-semibold text-slate-900">Error Loading Leagues</h3>
-        <p className="text-slate-600">{leagues.error.message || 'Failed to load leagues. Please try again later.'}</p>
+        <h3 className="mb-2 text-lg font-semibold text-slate-900">Error Loading Data</h3>
+        <p className="text-slate-600">{errorMessage}</p>
+        <p className="mt-2 text-sm text-slate-500">Please try refreshing the page or check your connection.</p>
       </div>
     );
   }
@@ -78,6 +80,17 @@ export default function PredictionsPage() {
       <div className="flex flex-col items-center justify-center py-16">
         <Loader2 className="mb-4 h-12 w-12 animate-spin text-brand-600" />
         <p className="text-slate-600">Loading leagues...</p>
+      </div>
+    );
+  }
+
+  // No leagues available
+  if (!leagues.data || leagues.data.length === 0) {
+    return (
+      <div className="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-12 text-center">
+        <AlertCircle className="mx-auto mb-4 h-12 w-12 text-slate-400" />
+        <h3 className="mb-2 text-lg font-semibold text-slate-900">No Leagues Available</h3>
+        <p className="text-slate-600">There are no leagues configured yet. Please check back later.</p>
       </div>
     );
   }
