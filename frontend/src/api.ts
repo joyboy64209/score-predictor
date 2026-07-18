@@ -66,14 +66,23 @@ export const authApi = {
 
 export const leaguesApi = {
   list: () => api.get<League[]>('/leagues').then((r) => r.data),
+  distinct: () => api.get<League[]>('/leagues/distinct').then((r) => r.data),
 };
 
 export const fixturesApi = {
-  upcoming: (leagueId: string, seasonId?: string, matchday?: number) => {
+  upcoming: (leagueId: string, seasonId?: string, matchday?: number, kickoffGte?: string) => {
     const params = new URLSearchParams({ leagueId });
     if (seasonId) params.set('seasonId', seasonId);
     if (matchday !== undefined) params.set('matchday', String(matchday));
+    if (kickoffGte) params.set('kickoffGte', kickoffGte);
     return api.get<Fixture[]>('/fixtures', { params }).then((r) => r.data);
+  },
+  upcomingFiltered: (params: { leagueId: string; matchday?: number; kickoffGte?: string; kickoffLte?: string }) => {
+    const searchParams = new URLSearchParams({ leagueId: params.leagueId });
+    if (params.matchday !== undefined) searchParams.set('matchday', String(params.matchday));
+    if (params.kickoffGte) searchParams.set('kickoffGte', params.kickoffGte);
+    if (params.kickoffLte) searchParams.set('kickoffLte', params.kickoffLte);
+    return api.get<Fixture[]>('/fixtures', { params: searchParams }).then((r) => r.data);
   },
   matchdays: (seasonId: string) =>
     api.get<number[]>('/fixtures/matchdays', { params: { seasonId } }).then((r) => r.data),

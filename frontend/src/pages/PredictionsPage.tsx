@@ -4,32 +4,49 @@ import { leaguesApi, fixturesApi, Fixture } from '../api';
 import FixtureAccordion from '../components/FixtureAccordion';
 import { Loader2, AlertCircle, Trophy } from 'lucide-react';
 
+type DateRange = '7' | '30' | 'all';
+
 export default function PredictionsPage() {
-  const leagues = useQuery({ queryKey: ['leagues'], queryFn: leaguesApi.list });
+  const leagues = useQuery({ queryKey: ['leagues'], queryFn: leaguesApi.distinct });
   const [leagueId, setLeagueId] = useState('');
-  const [seasonId, setSeasonId] = useState('');
   const [matchday, setMatchday] = useState<number | undefined>();
+  const [dateRange, setDateRange] = useState<DateRange>('7');
 
   useEffect(() => {
     if (leagues.data?.length && !leagueId) setLeagueId(leagues.data[0].id);
   }, [leagues.data, leagueId]);
 
   useEffect(() => {
-    setSeasonId('');
     setMatchday(undefined);
   }, [leagueId]);
 
   const seasons = leagues.data?.find((l) => l.id === leagueId)?.seasons ?? [];
 
   const matchdays = useQuery({
-    queryKey: ['matchdays', seasonId],
-    queryFn: () => fixturesApi.matchdays(seasonId),
-    enabled: !!seasonId,
+    queryKey: ['matchdays', seasons[0]?.id],
+    queryFn: () => fixturesApi.matchdays(seasons[0].id),
+    enabled: !!seasons[0]?.id,
   });
 
   const fixtures = useQuery<Fixture[]>({
-    queryKey: ['fixtures', leagueId, seasonId, matchday],
-    queryFn: () => fixturesApi.upcoming(leagueId, seasonId || undefined, matchday),
+    queryKey: ['fixtures', leagueId, dateRange, matchday],
+    queryFn: () => {
+      const now = new Date();
+      const params: { leagueId: string; matchday?: number; kickoffGte?: string; kickoffLte?: string } = {
+        leagueId,
+      };
+      if (matchday !== undefined) params.matchday = matchday;
+      if (dateRange === 'all') {
+        params.kickoffGte = now.toISOString();
+      } else {
+        const days = Number(dateRange);
+        const future = new Date(now);
+        future.setDate(future.getDate() + days);
+        params.kickoffGte = now.toISOString();
+        params.kickoffLte = future.toISOString();
+      }
+      return fixturesApi.upcomingFiltered(params);
+    },
     enabled: !!leagueId,
   });
 
@@ -65,14 +82,15 @@ export default function PredictionsPage() {
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">Season</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Date Range</label>
             <select
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
-              value={seasonId}
-              onChange={(e) => setSeasonId(e.target.value)}
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value as DateRange)}
             >
-              <option value="">All seasons</option>
-              {seasons.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              <option value="7">Next 7 days</option>
+              <option value="30">Next 30 days</option>
+              <option value="all">All upcoming</option>
             </select>
           </div>
           <div>

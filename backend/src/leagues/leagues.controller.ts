@@ -13,6 +13,12 @@ export class LeaguesController {
     return this.leagues.findAll();
   }
 
+  @Get('distinct')
+  @ApiOperation({ summary: 'List distinct leagues by name with their seasons' })
+  findDistinct() {
+    return this.leagues.findDistinct();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a league by id' })
   findOne(@Param('id') id: string) {

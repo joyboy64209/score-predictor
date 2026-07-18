@@ -13,11 +13,15 @@ export class FixturesController {
     @Query('leagueId') leagueId: string,
     @Query('seasonId') seasonId?: string,
     @Query('matchday') matchday?: string,
+    @Query('kickoffGte') kickoffGte?: string,
+    @Query('kickoffLte') kickoffLte?: string,
   ) {
     return this.fixtures.findUpcoming({
       leagueId,
       seasonId,
       matchday: matchday ? Number(matchday) : undefined,
+      kickoffGte,
+      kickoffLte,
     });
   }
 

@@ -6,6 +6,8 @@ export interface FixtureQuery {
   leagueId: string;
   seasonId?: string;
   matchday?: number;
+  kickoffGte?: string;
+  kickoffLte?: string;
 }
 
 @Injectable()
@@ -14,12 +16,27 @@ export class FixturesService {
 
   async findUpcoming(query: FixtureQuery) {
     if (!query.leagueId) throw new BadRequestException('leagueId is required');
+    
+    // Auto-select latest season if none provided
+    let seasonId = query.seasonId;
+    if (!seasonId) {
+      const latestSeason = await this.prisma.season.findFirst({
+        where: { leagueId: query.leagueId },
+        orderBy: { name: 'desc' },
+        select: { id: true },
+      });
+      seasonId = latestSeason?.id;
+    }
+    
     const where: any = {
       leagueId: query.leagueId,
-      kickoff: { gte: new Date() },
+      kickoff: { 
+        gte: query.kickoffGte ? new Date(query.kickoffGte) : new Date(),
+        ...(query.kickoffLte ? { lte: new Date(query.kickoffLte) } : {}),
+      },
       status: { in: ['SCHEDULED', 'PENDING'] },
     };
-    if (query.seasonId) where.seasonId = query.seasonId;
+    if (seasonId) where.seasonId = seasonId;
     if (query.matchday) where.matchday = query.matchday;
 
     return this.prisma.fixture.findMany({
