@@ -73,7 +73,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True,
 
 @app.get("/health")
 def health():
-    return scheduler.health_check()
+    return scheduler.scheduler.health_check()
 
 
 @app.get("/providers")
@@ -83,25 +83,25 @@ def providers():
 
 @app.post("/sync/competitions")
 def sync_competitions(req: SyncRequest, background: BackgroundTasks):
-    background.add_task(scheduler.run_sync_competitions, req.competitions)
+    background.add_task(scheduler.scheduler.run_sync_competitions, req.competitions)
     return {"status": "queued", "competitions": req.competitions}
 
 
 @app.post("/sync/elo")
 def sync_elo(background: BackgroundTasks):
-    background.add_task(scheduler.run_sync_elo)
+    background.add_task(scheduler.scheduler.run_sync_elo)
     return {"status": "queued"}
 
 
 @app.post("/sync/kaggle")
 def sync_kaggle(req: SyncRequest, background: BackgroundTasks):
-    background.add_task(scheduler.run_import_kaggle, req.competitions)
+    background.add_task(scheduler.scheduler.run_import_kaggle, req.competitions)
     return {"status": "queued"}
 
 
 @app.post("/train")
 def train_model(req: TrainRequest):
-    return scheduler.run_train(req.modelName, req.competitions)
+    return scheduler.scheduler.run_train(req.modelName, req.competitions)
 
 
 @app.post("/predict")
