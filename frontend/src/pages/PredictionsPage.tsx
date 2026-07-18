@@ -7,7 +7,11 @@ import { Loader2, AlertCircle, Trophy } from 'lucide-react';
 type DateRange = '7' | '30' | 'all';
 
 export default function PredictionsPage() {
-  const leagues = useQuery({ queryKey: ['leagues'], queryFn: leaguesApi.distinct });
+  const leagues = useQuery({
+    queryKey: ['leagues'],
+    queryFn: leaguesApi.distinct,
+  });
+
   const [leagueId, setLeagueId] = useState('');
   const [matchday, setMatchday] = useState<number | undefined>();
   const [dateRange, setDateRange] = useState<DateRange>('7');
@@ -20,12 +24,17 @@ export default function PredictionsPage() {
     setMatchday(undefined);
   }, [leagueId]);
 
-  const seasons = leagues.data?.find((l) => l.id === leagueId)?.seasons ?? [];
+  const selectedLeague = leagues.data?.find((l) => l.id === leagueId);
+  const seasons = selectedLeague?.seasons ?? [];
+  const latestSeasonId = seasons[0]?.id;
 
   const matchdays = useQuery({
-    queryKey: ['matchdays', seasons[0]?.id],
-    queryFn: () => fixturesApi.matchdays(seasons[0].id),
-    enabled: !!seasons[0]?.id,
+    queryKey: ['matchdays', latestSeasonId],
+    queryFn: () => {
+      if (!latestSeasonId) throw new Error('No season available');
+      return fixturesApi.matchdays(latestSeasonId);
+    },
+    enabled: !!latestSeasonId,
   });
 
   const fixtures = useQuery<Fixture[]>({
@@ -51,6 +60,27 @@ export default function PredictionsPage() {
   });
 
   const withPicks = (fixtures.data ?? []).filter((f) => f.predictions.length > 0);
+
+  // Error state
+  if (leagues.error) {
+    return (
+      <div className="rounded-xl border-2 border-dashed border-red-300 bg-red-50 p-12 text-center">
+        <AlertCircle className="mx-auto mb-4 h-12 w-12 text-red-400" />
+        <h3 className="mb-2 text-lg font-semibold text-slate-900">Error Loading Leagues</h3>
+        <p className="text-slate-600">{leagues.error.message || 'Failed to load leagues. Please try again later.'}</p>
+      </div>
+    );
+  }
+
+  // Loading state
+  if (leagues.isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <Loader2 className="mb-4 h-12 w-12 animate-spin text-brand-600" />
+        <p className="text-slate-600">Loading leagues...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fadeIn">
