@@ -78,9 +78,10 @@ def train(fixtures: list[Fixture],
         "features": list(X.columns),
     }
 
-    os.makedirs(settings.model_dir, exist_ok=True)
+    model_dir = settings.model_dir_abs
+    os.makedirs(model_dir, exist_ok=True)
     version = f"v2-{dataset_fingerprint(fixtures)}-{model_name}"
-    model_path = os.path.join(settings.model_dir, f"model_{version}.joblib")
+    model_path = os.path.join(model_dir, f"model_{version}.joblib")
     joblib.dump({"pipeline": pipeline, "features": list(X.columns),
                  "model_name": model_name, "version": version}, model_path)
 
@@ -94,7 +95,7 @@ def train(fixtures: list[Fixture],
         "trained_at": dt.datetime.utcnow().isoformat() + "Z",
         "feature_means": X.mean().to_dict(),
     }
-    with open(os.path.join(settings.model_dir, f"meta_{version}.json"), "w") as f:
+    with open(os.path.join(model_dir, f"meta_{version}.json"), "w") as f:
         json.dump(meta, f, indent=2, default=str)
 
     return {
@@ -107,25 +108,27 @@ def train(fixtures: list[Fixture],
 
 
 def load_model(version: Optional[str] = None):
+    model_dir = settings.model_dir_abs
     if version:
-        path = os.path.join(settings.model_dir, f"model_{version}.joblib")
+        path = os.path.join(model_dir, f"model_{version}.joblib")
     else:
         files = sorted(
-            [f for f in os.listdir(settings.model_dir) if f.startswith("model_")],
+            [f for f in os.listdir(model_dir) if f.startswith("model_")],
             reverse=True,
-        ) if os.path.exists(settings.model_dir) else []
+        ) if os.path.exists(model_dir) else []
         if not files:
             raise FileNotFoundError("No trained model found. Run training first.")
-        path = os.path.join(settings.model_dir, files[0])
+        path = os.path.join(model_dir, files[0])
     return joblib.load(path)
 
 
 def list_versions() -> list[dict]:
-    if not os.path.exists(settings.model_dir):
+    model_dir = settings.model_dir_abs
+    if not os.path.exists(model_dir):
         return []
     out = []
-    for f in os.listdir(settings.model_dir):
+    for f in os.listdir(model_dir):
         if f.startswith("meta_") and f.endswith(".json"):
-            with open(os.path.join(settings.model_dir, f)) as fh:
+            with open(os.path.join(model_dir, f)) as fh:
                 out.append(json.load(fh))
     return sorted(out, key=lambda m: m.get("trained_at", ""), reverse=True)

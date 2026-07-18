@@ -16,3 +16,7 @@ prisma/migrations/dev/
 ml/.http_cache.sqlite
 ml/models/
 ml/datasets/kaggle/**/*.zip
+ml/datasets/kaggle/
+data/
+*.xls
+*.xlsx

@@ -29,6 +29,16 @@ REPUTABLE_DATASETS = {
     "Ligue1": "excel4soccer/espn-soccer-data",
 }
 
+# Map full competition names to short codes for local data lookup
+COMPETITION_NAME_TO_CODE = {
+    "English Premier League": "EPL",
+    "La Liga": "LaLiga",
+    "Bundesliga": "Bundesliga",
+    "Serie A": "SerieA",
+    "Ligue 1": "Ligue1",
+    "UEFA Champions League": "ChampionsLeague",
+}
+
 
 class KaggleProvider(BaseProvider):
     name = "Kaggle"
@@ -40,6 +50,11 @@ class KaggleProvider(BaseProvider):
         )
 
     def check_connection(self) -> bool:
+        # Check if data is already present locally (no kaggle CLI needed)
+        if any(os.path.isdir(os.path.join(self.datasets_dir, d)) for d in REPUTABLE_DATASETS.keys()):
+            logger.info("Kaggle: local data present, skipping CLI check")
+            return True
+        
         if not settings.has_kaggle:
             # Try to rely on the kaggle.json on disk even if env not set
             cfg = os.path.join(os.environ.get("HOME", ""), ".kaggle", "kaggle.json")
@@ -95,9 +110,19 @@ class KaggleProvider(BaseProvider):
             return False
 
     def get_historical_fixtures(self, competitions: Optional[list[str]] = None) -> list[Fixture]:
+        # Map full competition names to short codes
         comps = competitions or list(REPUTABLE_DATASETS.keys())
-        out: list[Fixture] = []
+        mapped_comps = []
         for comp in comps:
+            if comp in COMPETITION_NAME_TO_CODE:
+                mapped_comps.append(COMPETITION_NAME_TO_CODE[comp])
+            elif comp in REPUTABLE_DATASETS:
+                mapped_comps.append(comp)
+            else:
+                logger.warning("Unknown competition: %s", comp)
+        
+        out: list[Fixture] = []
+        for comp in mapped_comps:
             path = self.download(comp)
             if not path or not self.validate(path):
                 continue

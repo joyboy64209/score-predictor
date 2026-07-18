@@ -84,4 +84,16 @@ export class AdminController {
       select: { id: true, email: true, name: true, role: true },
     });
   }
+
+  @Post('sync/fixtures')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Sync fixtures from football data providers' })
+  async syncFixtures() {
+    try {
+      const result = await this.ml.syncFixtures();
+      return { status: 'success', message: 'Fixture sync initiated', data: result };
+    } catch (error: any) {
+      return { status: 'error', message: error.message };
+    }
+  }
 }

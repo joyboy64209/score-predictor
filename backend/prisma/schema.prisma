@@ -50,6 +50,7 @@ model League {
   externalId String?
   createdAt DateTime @default(now())
   seasons   Season[]
+  fixtures  Fixture[]
 }
 
 model Season {
@@ -61,6 +62,7 @@ model Season {
   endDate   DateTime?
   createdAt DateTime @default(now())
   fixtures  Fixture[]
+  stats     TeamSeasonStat[]
   @@unique([leagueId, name])
 }
 
@@ -72,8 +74,7 @@ model Team {
   createdAt  DateTime  @default(now())
   homeFixtures Fixture[] @relation("homeTeam")
   awayFixtures Fixture[] @relation("awayTeam")
-  homeStats    TeamSeasonStat[] @relation("homeStats")
-  awayStats    TeamSeasonStat[] @relation("awayStats")
+  stats         TeamSeasonStat[]
 }
 
 model Fixture {
@@ -103,13 +104,14 @@ model TeamSeasonStat {
   team         Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
   seasonId     String
   season       Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  isHome       Boolean @default(false)
   played       Int    @default(0)
   wins         Int    @default(0)
   draws        Int    @default(0)
   losses       Int    @default(0)
   goalsFor     Int    @default(0)
   goalsAgainst Int    @default(0)
-  @@unique([teamId, seasonId])
+  @@unique([teamId, seasonId, isHome])
 }
 
 model Prediction {

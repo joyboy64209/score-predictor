@@ -54,7 +54,8 @@ class DataManager:
         rows = [{"id": f"L:{c.code or c.name}", "name": c.name,
                  "country": c.country, "externalId": c.external_id} for c in comps]
         with db.connection() as conn:
-            return db.upsert(conn, db.league_tbl, rows, ["id"])
+            db.upsert(conn, db.league_tbl, rows, ["id"])
+        return comps
 
     def sync_seasons(self, competition: Competition):
         seasons = self._safe(lambda: self.football_data.get_seasons(competition))

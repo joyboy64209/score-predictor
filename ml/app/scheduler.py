@@ -17,6 +17,7 @@ from datetime import datetime
 
 from .config import settings
 from .data_manager import data_manager
+from . import db
 from . import training
 from .schemas import Competition, Season
 
@@ -69,19 +70,115 @@ class Scheduler:
     # ---- jobs ----
     def run_sync_competitions(self, competitions: list[str]):
         logger.info("Syncing competitions: %s", competitions)
-        for name in competitions:
-            try:
-                comp = Competition(name=name, code=COMPETITIONS.get(name))
-                data_manager.sync_competitions()
-                season = Season(competition_name=name, name="2023/2024",
-                                start_year=2023, external_id="2023")
-                data_manager.sync_teams(comp, season)
-                data_manager.sync_fixtures(comp, season)
-                data_manager.sync_standings(comp, season)
-                data_manager.sync_advanced_metrics(comp, season)
-                self.last_run["competitions"] = _now()
-            except Exception as exc:
-                logger.error("competition sync failed for %s: %s", name, exc)
+        try:
+            # First, fetch all competitions from the provider
+            all_competitions = data_manager.sync_competitions()
+            logger.info(f"Fetched {len(all_competitions)} competitions from provider")
+
+            # Create a lookup map by code
+            comp_by_code = {c.code: c for c in all_competitions if c.code}
+
+            for name in competitions:
+                try:
+                    code = COMPETITIONS.get(name)
+                    if not code:
+                        logger.warning(f"No code mapping for {name}")
+                        continue
+
+                    # Find the competition from fetched data
+                    comp = comp_by_code.get(code)
+                    if not comp:
+                        logger.warning(f"Competition {name} (code: {code}) not found in provider data")
+                        continue
+
+                    logger.info(f"Syncing {name} (code: {code}, id: {comp.external_id})")
+
+                    # Create season FIRST (required for foreign keys)
+                    season_id = f"S:{name}:2023/2024"
+                    season = Season(competition_name=name, name="2023/2024",
+                                    start_year=2023, external_id="2023")
+                    
+                    # Ensure season exists in database
+                    with db.connection() as conn:
+                        db.upsert(conn, db.season_tbl, [{
+                            "id": season_id,
+                            "leagueId": f"L:{code}",
+                            "name": "2023/2024"
+                        }], ["id"])
+                    
+                    # Sync teams from provider first
+                    data_manager.sync_teams(comp, season)
+                    
+                    # Get fixtures data (but don't sync to DB yet)
+                    fixtures_data = data_manager._safe(lambda: data_manager.football_data.get_fixtures(comp, season))
+                    
+                    # Extract unique team names from fixtures
+                    if fixtures_data:
+                        with db.connection() as conn:
+                            team_names = set()
+                            for f in fixtures_data:
+                                team_names.add(f.home_team)
+                                team_names.add(f.away_team)
+                            
+                            # Create any missing teams BEFORE fixtures
+                            team_rows = [{
+                                "id": f"T:{name}",
+                                "name": name,
+                                "shortName": name,
+                                "externalId": name
+                            } for name in team_names]
+                            
+                            if team_rows:
+                                db.upsert(conn, db.team_tbl, team_rows, ["id"])
+                                logger.info(f"Created {len(team_rows)} teams from fixtures")
+                    
+                    # Now sync fixtures to DB (teams should exist now)
+                    fixtures = data_manager.sync_fixtures(comp, season)
+                    
+                    # Sync standings (with deduplication)
+                    try:
+                        # Get standings data and deduplicate by team name
+                        standings_data = data_manager._safe(lambda: data_manager.football_data.get_standings(comp, season))
+                        if standings_data:
+                            # Deduplicate by teamName, keeping the last entry
+                            seen = {}
+                            for s in standings_data:
+                                seen[s.team_name] = s
+                            deduped = list(seen.values())
+                            
+                            # Sync deduplicated standings
+                            with db.connection() as conn:
+                                # Map schema fields (snake_case) to DB columns (camelCase)
+                                rows = []
+                                for s in deduped:
+                                    # Generate ID from competition, season, and team
+                                    standing_id = f"ST:{s.competition_name}:{s.season_name}:{s.team_name}"
+                                    row = {
+                                        "id": standing_id,
+                                        "competition": s.competition_name,
+                                        "season": s.season_name,
+                                        "teamName": s.team_name,
+                                        "position": s.position,
+                                        "played": s.played,
+                                        "wins": s.wins,
+                                        "draws": s.draws,
+                                        "losses": s.losses,
+                                        "goalsFor": s.goals_for,
+                                        "goalsAgainst": s.goals_against,
+                                        "points": s.points
+                                    }
+                                    rows.append(row)
+                                db.upsert(conn, db.standing_tbl, rows, ["id"])
+                                logger.info(f"Synced {len(rows)} standings")
+                    except Exception as e:
+                        logger.warning(f"Standings sync failed: {e}")
+                    
+                    data_manager.sync_advanced_metrics(comp, season)
+                    self.last_run["competitions"] = _now()
+                except Exception as exc:
+                    logger.error(f"competition sync failed for {name}: {exc}")
+        except Exception as exc:
+            logger.error(f"competition sync failed: {exc}")
         return {"status": "done"}
 
     def run_sync_elo(self):

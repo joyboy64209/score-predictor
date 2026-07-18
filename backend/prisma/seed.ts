@@ -29,9 +29,9 @@ async function main() {
   });
 
   const league = await prisma.league.upsert({
-    where: { name: 'English Premier League' },
+    where: { id: 'league-epl' },
     update: {},
-    create: { name: 'English Premier League', country: 'England', externalId: 'PL' },
+    create: { id: 'league-epl', name: 'English Premier League', country: 'England', externalId: 'PL' },
   });
 
   const season = await prisma.season.upsert({
@@ -47,18 +47,19 @@ async function main() {
   const teams: Record<string, string> = {};
   for (const name of teamsData) {
     const t = await prisma.team.upsert({
-      where: { name },
+      where: { id: `team-${name.toLowerCase().replace(/\s/g, '-')}` },
       update: {},
-      create: { name, shortName: name.slice(0, 3).toUpperCase() },
+      create: { id: `team-${name.toLowerCase().replace(/\s/g, '-')}`, name, shortName: name.slice(0, 3).toUpperCase() },
     });
     teams[name] = t.id;
   }
 
   for (const [name, teamId] of Object.entries(teams)) {
     await prisma.teamSeasonStat.upsert({
-      where: { teamId_seasonId: { teamId, seasonId: season.id } },
+      where: { id: `stat-${teamId}-${season.id}` },
       update: {},
       create: {
+        id: `stat-${teamId}-${season.id}`,
         teamId,
         seasonId: season.id,
         played: 30,
@@ -78,12 +79,10 @@ async function main() {
     const away = teamNames[m % teamNames.length];
     const kickoff = new Date(now.getTime() + m * 24 * 60 * 60 * 1000);
     const fixture = await prisma.fixture.upsert({
-      where: {
-        // use externalId uniqueness surrogate
-        externalId: `seed-${season.id}-${m}`,
-      },
+      where: { id: `fixture-seed-${m}` },
       update: {},
       create: {
+        id: `fixture-seed-${m}`,
         externalId: `seed-${season.id}-${m}`,
         leagueId: league.id,
         seasonId: season.id,

@@ -55,4 +55,16 @@ export class MlService {
       return { status: 'down' };
     }
   }
+
+  async syncFixtures(competitions?: string[]): Promise<any> {
+    try {
+      const { data } = await this.client.post('/sync/competitions', { 
+        competitions: competitions || ['English Premier League', 'La Liga', 'Bundesliga', 'Serie A', 'Ligue 1'] 
+      });
+      return data;
+    } catch (err: any) {
+      this.logger.error(`ML sync failed: ${err?.message}`);
+      throw new InternalServerErrorException('ML service unavailable');
+    }
+  }
 }

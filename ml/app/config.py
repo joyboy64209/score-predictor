@@ -7,8 +7,14 @@ class Settings(BaseSettings):
     # --- Core ---
     database_url: str = "postgresql://predictor:predictor@localhost:5432/match_predictor?schema=public"
     backend_url: str = "http://localhost:3001"
-    model_dir: str = "/app/models"
+    model_dir: str = "models"
     datasets_dir: str = "datasets/kaggle"
+    
+    @property
+    def model_dir_abs(self) -> str:
+        """Get absolute path to model directory."""
+        import os
+        return os.path.join(os.path.dirname(os.path.dirname(__file__)), self.model_dir)
     log_level: str = "INFO"
 
     # --- Confidence thresholds (configurable) ---

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api';
+import { Activity, TrendingUp, Settings2, RefreshCw, CheckCircle2, XCircle } from 'lucide-react';
 
 export default function AdminPage() {
   const qc = useQueryClient();
@@ -16,73 +17,216 @@ export default function AdminPage() {
     queryKey: ['ml-health'],
     queryFn: () => api.get('/admin/ml-health').then((r) => r.data),
   });
+  const models = useQuery({
+    queryKey: ['models'],
+    queryFn: () => api.get('/admin/models').then((r) => r.data),
+  });
 
   const [form, setForm] = useState<Record<string, number>>({});
 
   const saveThresholds = useMutation({
     mutationFn: (body: Record<string, number>) => api.put('/admin/thresholds', body).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['thresholds'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['thresholds'] });
+      setForm({});
+    },
+  });
+
+  const syncFixtures = useMutation({
+    mutationFn: () => api.post('/admin/sync/fixtures').then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['fixtures'] }),
   });
 
   const retrain = useMutation({
     mutationFn: () => api.post('/admin/retrain').then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['metrics'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['metrics', 'models'] }),
   });
 
   const current = { ...(thresholds.data || {}), ...form };
 
   return (
-    <div>
-      <h1 className="mb-4 text-2xl font-bold">Admin</h1>
+    <div className="animate-fadeIn">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-900">Admin Dashboard</h1>
+        <p className="mt-1 text-slate-600">Manage predictions, thresholds, and ML models</p>
+      </div>
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-lg bg-white p-4 shadow">
-          <div className="text-xs uppercase text-slate-400">ML Service</div>
-          <div className="mt-1 text-lg font-semibold">
-            {mlHealth.data?.status === 'ok' ? '🟢 Online' : '🔴 Down'}
+      {/* Stats Grid */}
+      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="text-xs uppercase tracking-wide text-slate-500">ML Service</div>
+            {mlHealth.data?.status === 'ok' ? (
+              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+            ) : (
+              <XCircle className="h-5 w-5 text-red-500" />
+            )}
+          </div>
+          <div className="mt-2 text-2xl font-bold text-slate-900">
+            {mlHealth.data?.status === 'ok' ? 'Online' : 'Offline'}
           </div>
         </div>
-        <div className="rounded-lg bg-white p-4 shadow">
-          <div className="text-xs uppercase text-slate-400">Qualified Picks</div>
-          <div className="mt-1 text-lg font-semibold">{metrics.data?.qualified ?? '–'}</div>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="text-xs uppercase tracking-wide text-slate-500">Qualified Picks</div>
+            <TrendingUp className="h-5 w-5 text-brand-600" />
+          </div>
+          <div className="mt-2 text-2xl font-bold text-slate-900">{metrics.data?.qualified ?? '–'}</div>
         </div>
-        <div className="rounded-lg bg-white p-4 shadow">
-          <div className="text-xs uppercase text-slate-400">Total Predictions</div>
-          <div className="mt-1 text-lg font-semibold">{metrics.data?.total ?? '–'}</div>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="text-xs uppercase tracking-wide text-slate-500">Total Predictions</div>
+            <Activity className="h-5 w-5 text-blue-600" />
+          </div>
+          <div className="mt-2 text-2xl font-bold text-slate-900">{metrics.data?.total ?? '–'}</div>
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="text-xs uppercase tracking-wide text-slate-500">Models</div>
+            <Settings2 className="h-5 w-5 text-purple-600" />
+          </div>
+          <div className="mt-2 text-2xl font-bold text-slate-900">{models.data?.length ?? '–'}</div>
         </div>
       </div>
 
-      <div className="mb-6 rounded-xl bg-white p-5 shadow">
-        <h2 className="mb-3 font-semibold">Confidence Thresholds (%)</h2>
-        <div className="grid gap-3 sm:grid-cols-4">
-          {['MATCH_RESULT', 'DOUBLE_CHANCE', 'OTHER', 'COMBINATION'].map((k) => (
-            <label key={k} className="text-sm">
-              <span className="mb-1 block text-slate-500">{k.replace('_', ' ')}</span>
-              <input type="number" className="input" value={current[k] ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, [k]: Number(e.target.value) }))} />
-            </label>
+      {/* Thresholds Section */}
+      <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <Settings2 className="h-5 w-5 text-brand-600" />
+          <h2 className="text-xl font-bold text-slate-900">Confidence Thresholds</h2>
+        </div>
+        <p className="mb-4 text-sm text-slate-600">
+          Set minimum confidence levels for predictions to be displayed. Only predictions meeting these thresholds will be shown to users.
+        </p>
+        
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { key: 'MATCH_RESULT', label: 'Match Result (1X2)', description: 'Home/Draw/Away' },
+            { key: 'DOUBLE_CHANCE', label: 'Double Chance', description: '1X, X2, 12' },
+            { key: 'OTHER', label: 'Other Markets', description: 'BTTS, Over/Under, etc.' },
+            { key: 'COMBINATION', label: 'Combination Bets', description: 'Multiple markets' },
+          ].map(({ key, label, description }) => (
+            <div key={key} className="rounded-lg border border-slate-200 p-4">
+              <label className="mb-2 block text-sm font-medium text-slate-700">{label}</label>
+              <p className="mb-3 text-xs text-slate-500">{description}</p>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                  value={current[key] ?? ''}
+                  onChange={(e) => setForm((f) => ({ ...f, [key]: Number(e.target.value) }))}
+                />
+                <span className="absolute right-3 top-2 text-sm text-slate-500">%</span>
+              </div>
+            </div>
           ))}
         </div>
+
         <button
-          className="mt-4 rounded bg-brand-600 px-4 py-2 text-white hover:bg-brand-700 disabled:opacity-50"
+          className="mt-4 rounded-lg bg-brand-600 px-6 py-2.5 font-semibold text-white shadow-sm hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           disabled={saveThresholds.isPending || Object.keys(form).length === 0}
           onClick={() => saveThresholds.mutate(form)}>
-          {saveThresholds.isPending ? 'Saving…' : 'Save thresholds'}
+          {saveThresholds.isPending ? (
+            <span className="flex items-center gap-2">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+              Saving...
+            </span>
+          ) : 'Save Thresholds'}
         </button>
       </div>
 
-      <div className="rounded-xl bg-white p-5 shadow">
-        <h2 className="mb-3 font-semibold">Models</h2>
+      {/* Data Sync Section */}
+      <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <RefreshCw className="h-5 w-5 text-blue-600" />
+          <h2 className="text-xl font-bold text-slate-900">Data Synchronization</h2>
+        </div>
+        <p className="mb-4 text-sm text-slate-600">
+          Fetch the latest fixtures and data from football data providers. This will update the database with upcoming matches.
+        </p>
+
         <button
-          className="rounded bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700 disabled:opacity-50"
+          className="rounded-lg bg-blue-600 px-6 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          disabled={syncFixtures.isPending}
+          onClick={() => syncFixtures.mutate()}>
+          {syncFixtures.isPending ? (
+            <span className="flex items-center gap-2">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+              Syncing...
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Sync Fixtures Now
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Model Training Section */}
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <RefreshCw className="h-5 w-5 text-emerald-600" />
+          <h2 className="text-xl font-bold text-slate-900">Model Training</h2>
+        </div>
+        <p className="mb-4 text-sm text-slate-600">
+          Retrain the ML model with the latest data. This process may take several minutes depending on the dataset size.
+        </p>
+
+        <button
+          className="rounded-lg bg-emerald-600 px-6 py-2.5 font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           disabled={retrain.isPending}
           onClick={() => retrain.mutate()}>
-          {retrain.isPending ? 'Training…' : 'Retrain models'}
+          {retrain.isPending ? (
+            <span className="flex items-center gap-2">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+              Training Model...
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Retrain Model
+            </span>
+          )}
         </button>
+
         {retrain.data && (
-          <p className="mt-3 text-sm text-slate-500">
-            Trained <code>{retrain.data.modelVersion}</code> ({retrain.data.algorithm})
-          </p>
+          <div className="mt-4 rounded-lg bg-emerald-50 p-4 text-sm text-emerald-800">
+            <strong>Success!</strong> Trained model <code>{retrain.data.modelVersion}</code> using {retrain.data.algorithm}.
+          </div>
+        )}
+
+        {/* Model History */}
+        {models.data && models.data.length > 0 && (
+          <div className="mt-6">
+            <h3 className="mb-3 text-sm font-semibold text-slate-700">Recent Models</h3>
+            <div className="space-y-2">
+              {models.data.slice(0, 5).map((model: any) => (
+                <div key={model.id} className="flex items-center justify-between rounded-lg border border-slate-200 p-3 text-sm">
+                  <div>
+                    <div className="font-medium text-slate-900">{model.name}</div>
+                    <div className="text-xs text-slate-500">{model.algorithm}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-slate-500">
+                      {new Date(model.trainedAt).toLocaleDateString()}
+                    </div>
+                    {model.isActive && (
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>

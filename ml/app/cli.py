@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from .config import settings  # noqa: E402
 from .data_manager import data_manager  # noqa: E402
-from . import scheduler  # noqa: E402
+from .scheduler import scheduler  # noqa: E402
 from . import training  # noqa: E402
 from . import db  # noqa: E402
 
