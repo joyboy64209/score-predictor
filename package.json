@@ -1,0 +1,27 @@
+{
+  "name": "match-predictor-desktop",
+  "author": "joyboy64209",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Electron desktop shell for Match Predictor",
+  "main": "desktop/main.js",
+  "scripts": {
+    "build:frontend": "npm --prefix frontend run build",
+    "build:desktop": "node desktop/package.js",
+    "build": "npm run build:frontend && npm run build:desktop",
+    "start": "electron .",
+    "dev": "npm run build:frontend && electron ."
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "http-proxy-middleware": "^3.0.5"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-packager": "^17.1.2"
+  },
+  "build": {
+    "appId": "io.github.joyboy64209.matchpredictor",
+    "productName": "Match Predictor"
+  }
+}

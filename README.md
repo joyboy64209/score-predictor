@@ -83,6 +83,16 @@ cp .env.example .env
 docker compose -f docker/docker-compose.yml up --build
 ```
 
+## Desktop app
+
+```bash
+npm install
+npm run build:frontend
+npm run build:desktop
+```
+
+The desktop shell proxies `/api` to `MATCH_PREDICTOR_BACKEND_URL` and defaults to `http://localhost:3001`.
+
 ## API
 
 | Method | Path                          | Description                          |
