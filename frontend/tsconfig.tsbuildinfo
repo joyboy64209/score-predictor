@@ -1,1 +1,0 @@
-{"root":["./src/app.tsx","./src/api.ts","./src/main.tsx","./src/vite-env.d.ts","./src/components/fixtureaccordion.tsx","./src/components/predictioncard.tsx","./src/context/authcontext.tsx","./src/pages/adminpage.tsx","./src/pages/loginpage.tsx","./src/pages/predictionspage.tsx"],"version":"5.9.3"}

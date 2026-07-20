@@ -7,7 +7,7 @@ async function main() {
     name: 'Match Predictor',
     platform: 'win32',
     arch: 'x64',
-    out: path.resolve(__dirname, '..', 'desktop-release'),
+    out: path.resolve(__dirname, '..', 'desktop-build'),
     overwrite: true,
     prune: true,
     asar: true,

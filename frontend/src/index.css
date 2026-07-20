@@ -1,14 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: light;
+}
+
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  @apply bg-slate-950 text-slate-900 antialiased;
+  font-family: 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.22), transparent 32%),
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.16), transparent 26%),
+    linear-gradient(180deg, #f8fbff 0%, #eef4ff 42%, #f8fafc 100%);
+}
+
+#root {
+  min-height: 100vh;
 }
 
 @layer components {
   .input {
-    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500;
+    @apply w-full rounded-xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm outline-none shadow-sm backdrop-blur focus:border-brand-500 focus:ring-2 focus:ring-sky-100;
+  }
+
+  .panel {
+    @apply rounded-2xl border border-white/70 bg-white/80 shadow-[0_12px_40px_rgba(15,23,42,0.08)] backdrop-blur;
+  }
+
+  .panel-soft {
+    @apply rounded-2xl border border-slate-200 bg-white/90 shadow-[0_10px_30px_rgba(15,23,42,0.06)];
   }
 }

@@ -2,6 +2,9 @@ node_modules/
 dist/
 build/
 release/
+desktop-release/
+desktop-build/
+*.tsbuildinfo
 .env
 *.log
 .DS_Store

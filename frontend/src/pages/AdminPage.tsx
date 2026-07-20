@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api';
-import { Activity, TrendingUp, Settings2, RefreshCw, CheckCircle2, XCircle } from 'lucide-react';
+import { Activity, TrendingUp, Settings2, RefreshCw, CheckCircle2, XCircle, ShieldCheck, Sparkles } from 'lucide-react';
 
 export default function AdminPage() {
   const qc = useQueryClient();
@@ -16,6 +16,8 @@ export default function AdminPage() {
   const mlHealth = useQuery({
     queryKey: ['ml-health'],
     queryFn: () => api.get('/admin/ml-health').then((r) => r.data),
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
   });
   const models = useQuery({
     queryKey: ['models'],
@@ -45,16 +47,27 @@ export default function AdminPage() {
   const current = { ...(thresholds.data || {}), ...form };
 
   return (
-    <div className="animate-fadeIn">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Settings</h1>
-        <p className="mt-1 text-slate-600">Manage thresholds, sync data, and retrain models</p>
-      </div>
+    <div className="animate-fadeIn space-y-6">
+      <section className="panel overflow-hidden px-6 py-6 sm:px-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-white">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Admin controls
+            </div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-950">Settings</h1>
+            <p className="mt-1 max-w-2xl text-sm text-slate-600">Manage thresholds, sync data, and retrain models from one place.</p>
+          </div>
+          <div className="inline-flex items-center gap-2 self-start rounded-full bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
+            <Sparkles className="h-4 w-4" />
+            Public access enabled
+          </div>
+        </div>
+      </section>
 
       {/* Stats Grid */}
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="panel-soft p-5">
           <div className="flex items-center justify-between">
             <div className="text-xs uppercase tracking-wide text-slate-500">ML Service</div>
             {mlHealth.data?.status === 'ok' ? (
@@ -68,7 +81,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="panel-soft p-5">
           <div className="flex items-center justify-between">
             <div className="text-xs uppercase tracking-wide text-slate-500">Qualified Picks</div>
             <TrendingUp className="h-5 w-5 text-brand-600" />
@@ -76,7 +89,7 @@ export default function AdminPage() {
           <div className="mt-2 text-2xl font-bold text-slate-900">{metrics.data?.qualified ?? '–'}</div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="panel-soft p-5">
           <div className="flex items-center justify-between">
             <div className="text-xs uppercase tracking-wide text-slate-500">Total Predictions</div>
             <Activity className="h-5 w-5 text-blue-600" />
@@ -84,7 +97,7 @@ export default function AdminPage() {
           <div className="mt-2 text-2xl font-bold text-slate-900">{metrics.data?.total ?? '–'}</div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="panel-soft p-5">
           <div className="flex items-center justify-between">
             <div className="text-xs uppercase tracking-wide text-slate-500">Models</div>
             <Settings2 className="h-5 w-5 text-purple-600" />
@@ -94,7 +107,7 @@ export default function AdminPage() {
       </div>
 
       {/* Thresholds Section */}
-      <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="panel px-6 py-6">
         <div className="mb-4 flex items-center gap-2">
           <Settings2 className="h-5 w-5 text-brand-600" />
           <h2 className="text-xl font-bold text-slate-900">Confidence Thresholds</h2>
@@ -110,7 +123,7 @@ export default function AdminPage() {
             { key: 'OTHER', label: 'Other Markets', description: 'BTTS, Over/Under, etc.' },
             { key: 'COMBINATION', label: 'Combination Bets', description: 'Multiple markets' },
           ].map(({ key, label, description }) => (
-            <div key={key} className="rounded-lg border border-slate-200 p-4">
+            <div key={key} className="rounded-2xl border border-slate-200 bg-white/85 p-4 shadow-sm backdrop-blur">
               <label className="mb-2 block text-sm font-medium text-slate-700">{label}</label>
               <p className="mb-3 text-xs text-slate-500">{description}</p>
               <div className="relative">
@@ -118,7 +131,7 @@ export default function AdminPage() {
                   type="number"
                   min="0"
                   max="100"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-sky-100"
                   value={current[key] ?? ''}
                   onChange={(e) => setForm((f) => ({ ...f, [key]: Number(e.target.value) }))}
                 />
@@ -142,7 +155,7 @@ export default function AdminPage() {
       </div>
 
       {/* Data Sync Section */}
-      <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="panel px-6 py-6">
         <div className="mb-4 flex items-center gap-2">
           <RefreshCw className="h-5 w-5 text-blue-600" />
           <h2 className="text-xl font-bold text-slate-900">Data Synchronization</h2>
@@ -170,7 +183,7 @@ export default function AdminPage() {
       </div>
 
       {/* Model Training Section */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="panel px-6 py-6">
         <div className="mb-4 flex items-center gap-2">
           <RefreshCw className="h-5 w-5 text-emerald-600" />
           <h2 className="text-xl font-bold text-slate-900">Model Training</h2>

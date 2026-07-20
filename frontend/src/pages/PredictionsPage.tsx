@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { leaguesApi, fixturesApi, Fixture } from '../api';
 import FixtureAccordion from '../components/FixtureAccordion';
-import { Loader2, AlertCircle, Trophy } from 'lucide-react';
+import { AlertCircle, Trophy, Loader2, Filter, CalendarDays, Goal, BadgeInfo } from 'lucide-react';
 
 export default function PredictionsPage() {
   const leagues = useQuery({ queryKey: ['leagues'], queryFn: leaguesApi.list });
@@ -36,21 +36,57 @@ export default function PredictionsPage() {
   const withPicks = (fixtures.data ?? []).filter((f) => f.predictions.length > 0);
 
   return (
-    <div className="animate-fadeIn">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="mb-2 text-3xl font-bold text-slate-900">Upcoming Predictions</h1>
-        <p className="text-slate-600">AI-powered football match predictions with high-confidence picks</p>
-      </div>
+    <div className="animate-fadeIn space-y-6">
+      <section className="panel overflow-hidden px-6 py-6 sm:px-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-brand-700">
+              <BadgeInfo className="h-3.5 w-3.5" />
+              Desktop mode
+            </div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">Upcoming Predictions</h1>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">
+              Browse upcoming fixtures, inspect high-confidence picks, and adjust the thresholds that control what appears in the app.
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3 lg:w-[28rem]">
+            <div className="panel-soft p-4">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <Trophy className="h-4 w-4 text-amber-500" />
+                Fixtures
+              </div>
+              <div className="mt-2 text-2xl font-extrabold text-slate-950">{fixtures.data?.length ?? '—'}</div>
+            </div>
+            <div className="panel-soft p-4">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <Goal className="h-4 w-4 text-emerald-500" />
+                Picks
+              </div>
+              <div className="mt-2 text-2xl font-extrabold text-slate-950">{withPicks.length}</div>
+            </div>
+            <div className="panel-soft p-4">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <CalendarDays className="h-4 w-4 text-sky-500" />
+                League
+              </div>
+              <div className="mt-2 truncate text-lg font-bold text-slate-950">{leagues.data?.find((l) => l.id === leagueId)?.name ?? 'Loading…'}</div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Filters */}
-      <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold text-slate-900">Filter Matches</h2>
-        <div className="grid gap-4 sm:grid-cols-3">
+      <section className="panel px-6 py-5 sm:px-8">
+        <div className="mb-4 flex items-center gap-2">
+          <Filter className="h-5 w-5 text-brand-600" />
+          <h2 className="text-lg font-bold text-slate-950">Filter Matches</h2>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-3">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">League</label>
             <select
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+              className="input"
               value={leagueId}
               onChange={(e) => setLeagueId(e.target.value)}
               disabled={leagues.isLoading}
@@ -67,7 +103,7 @@ export default function PredictionsPage() {
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">Season</label>
             <select
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+              className="input"
               value={seasonId}
               onChange={(e) => setSeasonId(e.target.value)}
             >
@@ -78,7 +114,7 @@ export default function PredictionsPage() {
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">Matchday</label>
             <select
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+              className="input"
               value={matchday ?? ''}
               onChange={(e) => setMatchday(e.target.value ? Number(e.target.value) : undefined)}
             >
@@ -87,7 +123,7 @@ export default function PredictionsPage() {
             </select>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Loading State */}
       {fixtures.isLoading && (
@@ -99,7 +135,7 @@ export default function PredictionsPage() {
 
       {/* Empty State */}
       {!fixtures.isLoading && fixtures.data && withPicks.length === 0 && (
-        <div className="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-12 text-center">
+        <div className="panel px-12 py-14 text-center">
           <AlertCircle className="mx-auto mb-4 h-12 w-12 text-slate-400" />
           <h3 className="mb-2 text-lg font-semibold text-slate-900">No Predictions Available</h3>
           <p className="text-slate-600">

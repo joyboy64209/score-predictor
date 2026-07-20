@@ -3,7 +3,7 @@ import { Fixture, FixtureGroup } from '../api';
 import { PredictionSection } from './PredictionCard';
 import { useQuery } from '@tanstack/react-query';
 import { predictionsApi } from '../api';
-import { ChevronDown, Calendar, MapPin } from 'lucide-react';
+import { ChevronDown, Calendar, Target } from 'lucide-react';
 
 function FixtureAccordion({ fixture }: { fixture: Fixture }) {
   const [open, setOpen] = useState(false);
@@ -19,20 +19,16 @@ function FixtureAccordion({ fixture }: { fixture: Fixture }) {
   const timeStr = kickoff.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md">
+    <div className="overflow-hidden rounded-2xl border border-white/80 bg-white/85 shadow-[0_10px_30px_rgba(15,23,42,0.08)] backdrop-blur transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(15,23,42,0.12)]">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between px-5 py-4 text-left hover:bg-slate-50 transition-colors"
+        className="flex w-full items-center justify-between px-5 py-4 text-left transition-colors hover:bg-slate-50/70"
       >
         <div className="flex-1">
           <div className="mb-1 flex items-center gap-3">
-            <span className="text-lg font-bold text-slate-900">
-              {fixture.homeTeam.name}
-            </span>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">VS</span>
-            <span className="text-lg font-bold text-slate-900">
-              {fixture.awayTeam.name}
-            </span>
+            <span className="text-lg font-extrabold tracking-tight text-slate-950">{fixture.homeTeam.name}</span>
+            <span className="rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-brand-700">VS</span>
+            <span className="text-lg font-extrabold tracking-tight text-slate-950">{fixture.awayTeam.name}</span>
           </div>
           <div className="flex items-center gap-4 text-xs text-slate-500">
             <span className="flex items-center gap-1">
@@ -48,7 +44,8 @@ function FixtureAccordion({ fixture }: { fixture: Fixture }) {
         </div>
         <div className="flex items-center gap-3">
           {qualifiedCount > 0 && (
-            <span className="rounded-full bg-gradient-to-r from-yellow-400 to-orange-400 px-3 py-1.5 text-xs font-bold text-white shadow-sm">
+            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-3 py-1.5 text-xs font-bold text-white shadow-sm">
+              <Target className="h-3.5 w-3.5" />
               {qualifiedCount} pick{qualifiedCount === 1 ? '' : 's'}
             </span>
           )}

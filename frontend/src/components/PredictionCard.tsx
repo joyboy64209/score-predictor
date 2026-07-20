@@ -25,7 +25,8 @@ export function PredictionRow({ p }: { p: Prediction }) {
   const evPositive = p.expectedValue !== null && p.expectedValue >= 0;
   
   return (
-    <div className="group relative overflow-hidden rounded-lg border border-slate-200 bg-white p-4 transition-all hover:border-brand-300 hover:shadow-md">
+    <div className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg">
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand-500 via-sky-500 to-emerald-500 opacity-0 transition-opacity group-hover:opacity-100" />
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
           <div className="mb-1 flex items-center gap-2">
