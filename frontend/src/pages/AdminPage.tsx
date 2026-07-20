@@ -48,8 +48,8 @@ export default function AdminPage() {
     <div className="animate-fadeIn">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Admin Dashboard</h1>
-        <p className="mt-1 text-slate-600">Manage predictions, thresholds, and ML models</p>
+        <h1 className="text-3xl font-bold text-slate-900">Settings</h1>
+        <p className="mt-1 text-slate-600">Manage thresholds, sync data, and retrain models</p>
       </div>
 
       {/* Stats Grid */}

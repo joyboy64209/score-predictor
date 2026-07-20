@@ -4,12 +4,6 @@ export const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE || '/api',
 });
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
-
 export interface League {
   id: string;
   name: string;
@@ -51,18 +45,6 @@ export interface FixtureGroup {
   combination: Prediction[];
   other: Prediction[];
 }
-
-export interface AuthResponse {
-  accessToken: string;
-  user: { id: string; email: string; name: string; role: string };
-}
-
-export const authApi = {
-  login: (email: string, password: string) =>
-    api.post<AuthResponse>('/auth/login', { email, password }).then((r) => r.data),
-  register: (email: string, name: string, password: string) =>
-    api.post<AuthResponse>('/auth/register', { email, name, password }).then((r) => r.data),
-};
 
 export const leaguesApi = {
   list: () => api.get<League[]>('/leagues').then((r) => r.data),

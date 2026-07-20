@@ -1,11 +1,8 @@
 import { Routes, Route, Navigate, Link } from 'react-router-dom';
-import { useAuth } from './context/AuthContext';
-import LoginPage from './pages/LoginPage';
 import PredictionsPage from './pages/PredictionsPage';
 import AdminPage from './pages/AdminPage';
 
 function Navbar() {
-  const { user, logout } = useAuth();
   return (
     <header className="border-b bg-white">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
@@ -13,19 +10,7 @@ function Navbar() {
           ⚽ Match Predictor
         </Link>
         <nav className="flex items-center gap-4 text-sm">
-          {user?.role === 'ADMIN' && <Link to="/admin" className="text-slate-600 hover:text-brand-600">Admin</Link>}
-          {user ? (
-            <>
-              <span className="text-slate-500">{user.name}</span>
-              <button onClick={logout} className="rounded bg-slate-100 px-3 py-1 hover:bg-slate-200">
-                Logout
-              </button>
-            </>
-          ) : (
-            <Link to="/login" className="rounded bg-brand-600 px-3 py-1 text-white hover:bg-brand-700">
-              Login
-            </Link>
-          )}
+          <Link to="/admin" className="text-slate-600 hover:text-brand-600">Settings</Link>
         </nav>
       </div>
     </header>
@@ -33,18 +18,13 @@ function Navbar() {
 }
 
 export default function App() {
-  const { user } = useAuth();
   return (
     <div className="min-h-screen">
       <Navbar />
       <main className="mx-auto max-w-5xl px-4 py-6">
         <Routes>
-          <Route path="/login" element={user ? <Navigate to="/" /> : <LoginPage />} />
-          <Route path="/" element={user ? <PredictionsPage /> : <Navigate to="/login" />} />
-          <Route
-            path="/admin"
-            element={user?.role === 'ADMIN' ? <AdminPage /> : <Navigate to="/" />}
-          />
+          <Route path="/" element={<PredictionsPage />} />
+          <Route path="/admin" element={<AdminPage />} />
         </Routes>
       </main>
     </div>
